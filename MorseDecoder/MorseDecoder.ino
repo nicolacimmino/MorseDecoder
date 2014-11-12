@@ -17,11 +17,10 @@
 // I referred to https://github.com/jacobrosenthal/Goertzel for the Goertzel 
 //  implementation.
 
-#define LIN_OUT 1 // use the linear output function
-#define FHT_N 256 // set to 256 point fht
-#include <FHT.h>
-
 // Pin powering the mic pre-amp
+#define AUDIO_IN_PIN A0
+#define LED_GREEN_PIN 2
+#define LED_RED_PIN 3
 #define AMPLI_PWR_PIN A3
 
 // Sampling rate in samples/s
@@ -30,7 +29,7 @@
 // Length of one dot. Assumes constant WPM at the moment
 #define DOT_LEN 2
 
-#define THRESHOLD 2000
+#define THRESHOLD 1500
 
 // Precalculated coefficient for our goertzel filter.
 float goetzelCoeff=0;
@@ -49,7 +48,8 @@ enum statuses
     dot,
     dash,
     intersymbol,
-    interchar
+    interchar,
+    interword
 };
 
 statuses currentStatus=none;
@@ -74,6 +74,11 @@ void setup()
   //  generated 1.1V to increase A/D resolution.
   analogReference(INTERNAL);
 
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_RED_PIN, OUTPUT);
+  digitalWrite(LED_GREEN_PIN, LOW);
+  digitalWrite(LED_RED_PIN, LOW);
+  
   // Power up the amplifier.
   pinMode(AMPLI_PWR_PIN, OUTPUT);
   digitalWrite(AMPLI_PWR_PIN,HIGH);
@@ -87,7 +92,7 @@ void loop()
   // Sample at 4KHz 
   for (int ix = 0; ix < GOERTZEL_N; ix++)
   {
-    sampledData[ix] = analogRead(A0)&0xFF; // 17uS
+    sampledData[ix] = analogRead(AUDIO_IN_PIN)&0xFF; // 17uS
     delayMicroseconds(233); // total 250uS -> 4KHz
   } 
  
@@ -116,22 +121,37 @@ void loop()
   {
     currentStatus=interchar;
   }
+  else if(currentStatus==interchar && magnitude<THRESHOLD && statusCounter>DOT_LEN*8)
+  {
+    currentStatus=interword;
+  }
   else if(currentStatus!=none && currentStatus<intersymbol && magnitude<THRESHOLD)
   {
     //Serial.print((currentStatus==dot)?".":"-");
+    digitalWrite((currentStatus==dot)?LED_GREEN_PIN:LED_RED_PIN,HIGH);
     currentAssumedChar=lookup((currentStatus==dot)?'.':'-');
     currentStatus=intersymbol;
     statusCounter=0;
     //currentStatus=none;
   }
-  else if(currentStatus>dash && magnitude>THRESHOLD)
+  else if(currentStatus>dash && (magnitude>THRESHOLD || currentStatus==interword))
   {
     //Serial.print((currentStatus==intersymbol)?"":" ");
+    digitalWrite(LED_GREEN_PIN, LOW);
+    digitalWrite(LED_RED_PIN, LOW);
+    
     if(currentStatus==interchar)
     {
       Serial.print(currentAssumedChar);
       lookup('\0');
     }
+    else if(currentStatus==interword)
+    {
+      Serial.print(currentAssumedChar);
+      Serial.print(" ");
+      lookup('\0');
+    }
+    
     currentStatus=none;
   }
   
