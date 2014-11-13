@@ -33,7 +33,7 @@ When the "." comes in we reduce the dash jump to half and we then proceed to inc
 
 ![Proto](documentation/step2.png)
 
-At this point the inndex is on the "E", which makes sense as this would be an "E" if the symbol ended here. We instead receive a "-" so we go diving the dash jump to half again, that is to 16 and, since we have received a dash we apply that offset to the index and end on postion 17 that contains an "A", as expected.
+At this point the index is on the "E", which makes sense as this would be an "E" if the symbol ended here. We instead receive a "-" so we go diving the dash jump to half again, that is to 16 and, since we have received a dash, we apply that offset to the index and end on postion 17 that contains an "A", as expected.
 
 ![Proto](documentation/step3.png)
 
