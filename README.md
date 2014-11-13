@@ -21,8 +21,28 @@ Morse to ASCII
 
 For the conversion from morse (sequences of dots and dashes) to ASCII I make use of an alghotithm that I have not seen published anywhere so far. The alghorithm performs fundamentally a binary search inside a precalculated string taking either branch every time according to the current symbol being a dot or a dash. The pre calculated string has been prepared by running through the algorithm the morse code of each letters and seeing where is caused it to land in the string.
 
-There are two indexes that point, initially, to the begnning and to the end of the string respectively. At every new element the function is called and, if the element is a dot the starting pointer is incremented by one and the end ponter is moved just before the half. If the element is a dash the start pointer is moved just after the half of the current range. In this way every sequence of dashes and dots will land in a different position of the string that will contain the ASCII representation of that sequence.
+The algorithm can be decribe as follows. Have an index inside the lookup string inizialied to zero. Have an initial dash jump size of 64. At every received element (dot or dash) halve the initial dash jump and then increase by 1 the index inside the lookup string if a dot was received and by dash jump size if a dash was received. Repeat until a letter separator is reached, at that point the index inside the lookup string will point to the ASCII corresponding to the decoded morse.
 
-The current string contains 65 symbols that guarantee no clashing if all A-Z and 0-9 digits are used. If more symbols are to be added extra space should be made in the lookup string to avoid clashing. The size can be empirically determined by ensuring, when creating the string, that no char is assigned to a position that already contains a char, if that happens the string needs to be lengthened until no collisions are found.
+  index=0
+  dash_jump=64
+  for each received element e
+    dash_jump=dash_jump/2
+    index = index + (e=='.')?1:dash_jump
+  endfor
+  ascii = lookupstring[index]
+  
+The current string contains 64 symbols that guarantees no clashing if all A-Z and 0-9 digits are used. If more symbols are to be added extra space should be made in the lookup string to avoid clashing. The size can be empirically determined by ensuring, when creating the string, that no char is assigned to a position that already contains a char, if that happens the string needs to be lengthened until no collisions are found.
 
-Note that with this method invalid strings of elements cannot be detected as you will end up landing anyway on a char in the string and, in some cases, this might be a valid char even if represented by a different sequence.
+Let's see an example step by step. Let's assume we receive a ".-", that is an "A". At the beginning the status is as in the following picture:
+
+![Proto](documentation/step1.png)
+
+When the "." comes in we reduce the dash jump to half and we then proceed to increase the pointer in the lookup string by one, as we receied the dot.
+
+![Proto](documentation/step2.png)
+
+At this point the index is on the "E", which makes sense as this would be an "E" if the symbol ended here. We instead receive a "-" so we go diving the dash jump to half again, that is to 16 and, since we have received a dash, we apply that offset to the index and end on postion 17 that contains an "A", as expected.
+
+![Proto](documentation/step3.png)
+
+Note that with this method invalid strings of elements cannot be detected as invalid because you will end up landing anyway on a char in the string and, in some cases, this might be a valid char even if represented by a different sequence, since most of the lookup contains some symbols.
