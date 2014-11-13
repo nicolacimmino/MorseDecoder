@@ -56,9 +56,9 @@ statuses currentStatus=none;
 
 int statusCounter=0;
 
-char* lookupString = ".EISH54V.3UF....2ARL.....WP..J.1TNDB6.X..KC..Y..MGZ7.Q..O.8..90..";
-byte currentRangeStart = 0;
-byte currentRangeEnd = 65;
+char* lookupString = ".EISH54V.3UF....2ARL.....WP..J.1TNDB6.X..KC..Y..MGZ7.Q..O.8..90.";
+byte currentDecoderIndex = 0;
+byte currentDashJump = 64;
 char currentAssumedChar='\0';
 
 void setup()
@@ -161,22 +161,21 @@ void loop()
 
 char lookup(char currentMark)
 {
-    byte halfRangeLen = floor((currentRangeEnd - currentRangeStart) / 2.0f);
+    currentDashJump = floor(currentDashJump / 2.0f);
     if (currentMark == '.')
     {                
-        currentRangeStart++;
-        currentRangeEnd = currentRangeStart + halfRangeLen;
+        currentDecoderIndex++;
     }
     else if (currentMark == '-')
     {
-        currentRangeStart += halfRangeLen;
+        currentDecoderIndex += currentDashJump;
     }
     else if (currentMark == '\0')
     {
-        currentRangeStart = 0;
-        currentRangeEnd = 65;
+        currentDecoderIndex = 0;
+        currentDashJump = 64;
         return '\0';
     }
-    return lookupString[currentRangeStart];
+    return lookupString[currentDecoderIndex];
 }
 
