@@ -29,7 +29,7 @@
 // Length of one dot. Assumes constant WPM at the moment
 #define DOT_LEN 2
 
-#define THRESHOLD 1500
+#define THRESHOLD 4000
 
 // Precalculated coefficient for our goertzel filter.
 float goetzelCoeff=0;
@@ -90,12 +90,23 @@ void setup()
 void loop()
 {
   // Sample at 4KHz 
+  byte peak=0;
   for (int ix = 0; ix < GOERTZEL_N; ix++)
   {
     sampledData[ix] = analogRead(AUDIO_IN_PIN)&0xFF; // 17uS
     delayMicroseconds(233); // total 250uS -> 4KHz
+    if(peak<sampledData[ix])
+    {
+      peak=sampledData[ix];
+    }
   } 
- 
+  
+  // AGC scale to have peak at 255.
+  for (int ix = 0; ix < GOERTZEL_N; ix++)
+  {
+    sampledData[ix] = sampledData[ix] * (255/peak);
+  }
+  
   // Apply goertzel filter and get amplitude of  
   float Q2 = 0;
   float Q1 = 0;
