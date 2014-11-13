@@ -4,7 +4,7 @@ The hardware is a very simple board I used in many other my DSP projects, just a
 
 ![Proto](documentation/proto.png)
 
-The current code expects audio at 700Hz and a morse speed around 13 WPM.
+The current code expects audio at 700Hz and a morse speed around 13 WPM. You can see a video of the device in action at: https://www.youtube.com/watch?v=iYScOh34aIk
 
 Morse detection
 =============
