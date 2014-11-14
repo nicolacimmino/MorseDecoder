@@ -9,12 +9,24 @@ The current code expects audio at 700Hz and a morse speed around 13 WPM. You can
 Morse detection
 =============
 
-After sampling the first thing the software does is to apply a Goetzel filter to detect the level of the 700Hz component of the captured audio. This is much more efficient than an FFT and, hence, allows to get estimates faster, so more often.  Once the level is detected a simple state machine is employed to keep track of the current status at each iteration. Depending on the level being above or below a preset threshold the application estomates dots, dashes, inter-element, inter-letter and inter-word stages of the signal and proceeds to decode those to ASCII chars. The alghorithm employed to translate the sequence of dots and dashes to ASCII is decribed in the next section.
+After sampling the first thing we do is to remove the DC component, it should be remembered that the pramplifier is a class A amplifier and is DC coupled with the A/D, so the signal swings around VCC/2.
 
-Things that could be enhanched:
+After that we apply an AGC (Automatic Gain Conttrol), this doesn't enhance the SNR, since it's done after sampling, anyhow it allows to keep signal RMS level constat, so that the output of the following stages is independent of the captured signal level, this is desirable as we aim only at detecting the presence of the tone. Additionally at this stage we apply a squelch, which is responsbile to mute completely the sampled signal if it's RMS level is below a certain threashold. This prevents noise from triggering the decoder.
 
-* Automatically adjust threshold
-* Detect dot length to adjust to any speed
+Finally we use Goetzel to detect the presence of the 700Hz component of the captured audio. This is much more efficient than an FFT and, hence, allows to get estimates faster, so more often.  Once the presence of the signal is determined a simple state machine is employed to keep track of the current status at each iteration. Depending on the level being above or below a preset threshold the application estomates dots, dashes, inter-element, inter-letter and inter-word stages of the signal and proceeds to decode those to ASCII chars. The alghorithm employed to translate the sequence of dots and dashes to ASCII is decribed in the next section.
+
+I have run some tests, by adding serial prints of values at varous stages. The first is the frequency response of the Goertzel. I have produces tones of varying frequency, in few Hz steps, around 700Hz. The graph below shows the freuency respose:
+
+![Proto](documentation/freqResp.png)
+
+The first thing we notice is that the peak of the respose is actually around 695, this is probably due to slight innacuracy in the sampling frequency, though I have no exact measure of the accuracy of the geerator (an HTML5 script). We can see anyhow that in a 15Hz deviation the respose is already more than 7dB down.
+
+The following graph shows instead the action of the AGC and the squelch and represents the variation in amplitude of the Goertzel output as a fuction of the captured siganl RMS value. THis was taken at a constant frequency of 700Hz:
+
+![Proto](documentation/signalRejection.png)
+
+We can see that with a captured RMS level below 5 there is no response, above that the response settles around 700 regardless of input signal amplitude, which is the desired response. 
+
 
 Morse to ASCII
 ============
