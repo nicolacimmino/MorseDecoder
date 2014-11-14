@@ -24,23 +24,22 @@
 #define AMPLI_PWR_PIN A3
 
 // Sampling rate in samples/s
-#define SAMPLING_RATE 4000
+#define SAMPLING_RATE 5000
 
 // Length of one dot. Assumes constant WPM at the moment
-#define DOT_LEN 2
+#define DOT_LEN 1
 
-#define THRESHOLD 4000
+#define THRESHOLD 200
 
 // Precalculated coefficient for our goertzel filter.
 float goetzelCoeff=0;
 
 // Length of the goertzel filter
-#define GOERTZEL_N 64
+#define GOERTZEL_N 128
 
 // The samples taken from the A/D. The A/D results are
-// in fact 10-bits but we use a byte to save memory
-// as we never reach values > 256.
-byte sampledData[GOERTZEL_N];
+// 10-bits.
+int sampledData[GOERTZEL_N];
 
 enum statuses
 {
@@ -70,10 +69,6 @@ void setup()
   _SFR_BYTE(ADCSRA) &= ~_BV(ADPS1); // Clear ADPS1
   _SFR_BYTE(ADCSRA) &= ~_BV(ADPS0); // Clear ADPS0
   
-  // This sets the ADC analog reference to internally
-  //  generated 1.1V to increase A/D resolution.
-  analogReference(INTERNAL);
-
   pinMode(LED_GREEN_PIN, OUTPUT);
   pinMode(LED_RED_PIN, OUTPUT);
   digitalWrite(LED_GREEN_PIN, LOW);
@@ -90,21 +85,36 @@ void setup()
 void loop()
 {
   // Sample at 4KHz 
-  byte peak=0;
+  int32_t dcOffset=0;
   for (int ix = 0; ix < GOERTZEL_N; ix++)
   {
-    sampledData[ix] = analogRead(AUDIO_IN_PIN)&0xFF; // 17uS
+    sampledData[ix] = analogRead(AUDIO_IN_PIN); // 17uS
     delayMicroseconds(233); // total 250uS -> 4KHz
-    if(peak<sampledData[ix])
-    {
-      peak=sampledData[ix];
-    }
+    dcOffset+=sampledData[ix];
   } 
+  dcOffset=dcOffset/GOERTZEL_N;
   
-  // AGC scale to have peak at 255.
+  // Remove DC offset (center signal around zero).
+  // Calculate RMS signal level.
+  int32_t rmsLevel=0;
   for (int ix = 0; ix < GOERTZEL_N; ix++)
   {
-    sampledData[ix] = sampledData[ix] * (255/peak);
+    sampledData[ix] -= dcOffset;
+    rmsLevel += abs(sampledData[ix]);
+  }
+  rmsLevel= rmsLevel/GOERTZEL_N;
+  
+  // AGC scale to have RMS at about 100
+  for (int ix = 0; ix < GOERTZEL_N; ix++)
+  {
+    if(rmsLevel>5)
+    {
+      sampledData[ix] = sampledData[ix] * (100.0f/rmsLevel);
+    }
+    else
+    {
+      sampledData[ix] = 0;
+    }
   }
   
   // Apply goertzel filter and get amplitude of  
@@ -118,6 +128,7 @@ void loop()
   }
   
   int magnitude = sqrt(Q1*Q1 + Q2*Q2 - goetzelCoeff*Q1*Q2);
+  //Serial.println(magnitude);
   
   if(currentStatus==none && magnitude>THRESHOLD)
   {
