@@ -9,7 +9,19 @@ The current code expects audio at 700Hz and a morse speed around 13 WPM. You can
 Morse detection
 =============
 
-After sampling the first thing we do is to remove the DC component, it should be remembered that the pramplifier is a class A amplifier and is DC coupled with the A/D, so the signal swings around VCC/2.
+After sampling the first thing we do is to remove the DC component, it should be remembered that the pramplifier is a class A amplifier and is DC coupled with the A/D, so the signal swings around VCC/2, the input signal looks like in the plot below:
+
+![Proto](documentation/signal1.png)
+
+This is good as the ADC can samples only level above zero, we need to get rid of the DC though to be able to evaluate the amplitude of the signal. After removing the DC we are left with the signal centered aroud zero:
+
+![Proto](documentation/signal2.png)
+
+At this point we rectify it and calculate and average level. If we didn't rectify it the average would be zero. The signal after rectification looks like this, and the red line represents the average:
+
+![Proto](documentation/signal2.png)
+
+Note that this signal has double frequency of the original and, will have also some extra harmonic content due to the discontinuity around zero, so this signal is suitable only to evaluate average power, for later processing the original signal minus the DC will be used.
 
 After that we apply an AGC (Automatic Gain Conttrol), this doesn't enhance the SNR, since it's done after sampling, anyhow it allows to keep signal RMS level constat, so that the output of the following stages is independent of the captured signal level, this is desirable as we aim only at detecting the presence of the tone. Additionally at this stage we apply a squelch, which is responsbile to mute completely the sampled signal if it's RMS level is below a certain threashold. This prevents noise from triggering the decoder.
 
