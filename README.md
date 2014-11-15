@@ -6,7 +6,7 @@ The hardware is a very simple board I used in many other my DSP projects, just a
 
 The current code expects audio at 700Hz and a morse speed around 13 WPM. You can see a video of the device in action at: https://www.youtube.com/watch?v=iYScOh34aIk
 
-Morse detection
+Signal detection
 =============
 
 After sampling the first thing we do is to remove the DC component, it should be remembered that the pramplifier is a class A amplifier and is DC coupled with the A/D, so the signal swings around VCC/2, the input signal looks like in the plot below:
